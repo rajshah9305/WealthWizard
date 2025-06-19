@@ -1,4 +1,6 @@
 import { expenses, budgets, goals, type Expense, type InsertExpense, type Budget, type InsertBudget, type Goal, type InsertGoal } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   // Expenses
@@ -25,38 +27,35 @@ export interface IStorage {
   getCategorySpending(): Promise<Record<string, number>>;
 }
 
-export class MemStorage implements IStorage {
-  private expenses: Map<number, Expense>;
-  private budgets: Map<number, Budget>;
-  private goals: Map<number, Goal>;
-  private currentExpenseId: number;
-  private currentBudgetId: number;
-  private currentGoalId: number;
-
-  constructor() {
-    this.expenses = new Map();
-    this.budgets = new Map();
-    this.goals = new Map();
-    this.currentExpenseId = 1;
-    this.currentBudgetId = 1;
-    this.currentGoalId = 1;
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<any | undefined> {
+    // User management can be added later if needed
+    return undefined;
   }
 
-  // Expenses
+  async getUserByUsername(username: string): Promise<any | undefined> {
+    // User management can be added later if needed
+    return undefined;
+  }
+
+  async createUser(insertUser: any): Promise<any> {
+    // User management can be added later if needed
+    return {};
+  }
+
   async createExpense(insertExpense: InsertExpense): Promise<Expense> {
-    const id = this.currentExpenseId++;
-    const expense: Expense = {
-      ...insertExpense,
-      id,
-      date: new Date(),
-      description: insertExpense.description || null,
-      receiptUrl: insertExpense.receiptUrl || null,
-    };
-    this.expenses.set(id, expense);
+    const [expense] = await db
+      .insert(expenses)
+      .values({
+        ...insertExpense,
+        description: insertExpense.description || null,
+        receiptUrl: insertExpense.receiptUrl || null,
+      })
+      .returning();
     
     // Update budget spent amount
-    const budgets = await this.getBudgets();
-    const budget = budgets.find(b => b.category === expense.category);
+    const budgetList = await this.getBudgets();
+    const budget = budgetList.find(b => b.category === expense.category);
     if (budget) {
       const newSpent = (parseFloat(budget.spent) + parseFloat(expense.amount)).toString();
       await this.updateBudgetSpent(budget.id, newSpent);
@@ -66,88 +65,88 @@ export class MemStorage implements IStorage {
   }
 
   async getExpenses(): Promise<Expense[]> {
-    return Array.from(this.expenses.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+    return await db.select().from(expenses).orderBy(expenses.date);
   }
 
   async getExpensesByCategory(category: string): Promise<Expense[]> {
-    return Array.from(this.expenses.values()).filter(expense => expense.category === category);
+    return await db.select().from(expenses).where(eq(expenses.category, category));
   }
 
   async getExpensesByDateRange(startDate: Date, endDate: Date): Promise<Expense[]> {
-    return Array.from(this.expenses.values()).filter(expense => 
-      expense.date >= startDate && expense.date <= endDate
+    return await db.select().from(expenses).where(
+      and(
+        gte(expenses.date, startDate),
+        lte(expenses.date, endDate)
+      )
     );
   }
 
-  // Budgets
   async createBudget(insertBudget: InsertBudget): Promise<Budget> {
-    const id = this.currentBudgetId++;
-    const budget: Budget = {
-      ...insertBudget,
-      id,
-      spent: "0",
-      period: insertBudget.period || "monthly",
-    };
-    this.budgets.set(id, budget);
+    const [budget] = await db
+      .insert(budgets)
+      .values({
+        ...insertBudget,
+        period: insertBudget.period || "monthly",
+      })
+      .returning();
     return budget;
   }
 
   async getBudgets(): Promise<Budget[]> {
-    return Array.from(this.budgets.values());
+    return await db.select().from(budgets);
   }
 
   async updateBudgetSpent(id: number, spent: string): Promise<Budget | undefined> {
-    const budget = this.budgets.get(id);
-    if (budget) {
-      const updatedBudget = { ...budget, spent };
-      this.budgets.set(id, updatedBudget);
-      return updatedBudget;
-    }
-    return undefined;
+    const [budget] = await db
+      .update(budgets)
+      .set({ spent })
+      .where(eq(budgets.id, id))
+      .returning();
+    return budget || undefined;
   }
 
   async deleteBudget(id: number): Promise<boolean> {
-    return this.budgets.delete(id);
+    const result = await db.delete(budgets).where(eq(budgets.id, id));
+    return result.rowCount! > 0;
   }
 
-  // Goals
   async createGoal(insertGoal: InsertGoal): Promise<Goal> {
-    const id = this.currentGoalId++;
-    const goal: Goal = {
-      ...insertGoal,
-      id,
-      currentAmount: "0",
-      isCompleted: false,
-      deadline: insertGoal.deadline || null,
-    };
-    this.goals.set(id, goal);
+    const [goal] = await db
+      .insert(goals)
+      .values({
+        ...insertGoal,
+        deadline: insertGoal.deadline || null,
+      })
+      .returning();
     return goal;
   }
 
   async getGoals(): Promise<Goal[]> {
-    return Array.from(this.goals.values());
+    return await db.select().from(goals);
   }
 
   async updateGoalProgress(id: number, currentAmount: string): Promise<Goal | undefined> {
-    const goal = this.goals.get(id);
-    if (goal) {
-      const isCompleted = parseFloat(currentAmount) >= parseFloat(goal.targetAmount);
-      const updatedGoal = { ...goal, currentAmount, isCompleted };
-      this.goals.set(id, updatedGoal);
-      return updatedGoal;
-    }
-    return undefined;
+    const [currentGoal] = await db.select().from(goals).where(eq(goals.id, id));
+    if (!currentGoal) return undefined;
+
+    const isCompleted = parseFloat(currentAmount) >= parseFloat(currentGoal.targetAmount);
+    
+    const [goal] = await db
+      .update(goals)
+      .set({ currentAmount, isCompleted })
+      .where(eq(goals.id, id))
+      .returning();
+    return goal || undefined;
   }
 
   async deleteGoal(id: number): Promise<boolean> {
-    return this.goals.delete(id);
+    const result = await db.delete(goals).where(eq(goals.id, id));
+    return result.rowCount! > 0;
   }
 
-  // Analytics
   async getTotalBalance(): Promise<number> {
-    // For demo purposes, assuming a base balance minus expenses
-    const totalExpenses = Array.from(this.expenses.values())
-      .reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
+    const allExpenses = await this.getExpenses();
+    const totalExpenses = allExpenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0);
     return 10000 - totalExpenses; // Starting with $10,000 base
   }
 
@@ -161,10 +160,10 @@ export class MemStorage implements IStorage {
   }
 
   async getCategorySpending(): Promise<Record<string, number>> {
-    const expenses = await this.getExpenses();
+    const allExpenses = await this.getExpenses();
     const categorySpending: Record<string, number> = {};
     
-    expenses.forEach(expense => {
+    allExpenses.forEach(expense => {
       const category = expense.category;
       categorySpending[category] = (categorySpending[category] || 0) + parseFloat(expense.amount);
     });
@@ -173,4 +172,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
