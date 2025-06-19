@@ -63,15 +63,24 @@ export default function SpendingChart() {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="hover:shadow-lg transition-all duration-300">
+      <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-t-lg">
         <div className="flex items-center justify-between">
-          <CardTitle>Monthly Spending Trend</CardTitle>
+          <CardTitle className="flex items-center">
+            <div className="p-2 bg-white dark:bg-gray-800 rounded-full mr-3 shadow-sm">
+              <i className="fas fa-chart-line text-green-600"></i>
+            </div>
+            <div>
+              <span className="text-lg font-semibold">Spending Trends</span>
+              <p className="text-sm text-muted-foreground font-normal">Visualize your spending patterns</p>
+            </div>
+          </CardTitle>
           <div className="flex space-x-2">
             <Button
               size="sm"
               variant={period === "30" ? "default" : "outline"}
               onClick={() => setPeriod("30")}
+              className="hover:scale-105 transition-transform"
             >
               30 Days
             </Button>
@@ -79,6 +88,7 @@ export default function SpendingChart() {
               size="sm"
               variant={period === "90" ? "default" : "outline"}
               onClick={() => setPeriod("90")}
+              className="hover:scale-105 transition-transform"
             >
               90 Days
             </Button>
@@ -86,13 +96,14 @@ export default function SpendingChart() {
               size="sm"
               variant={period === "365" ? "default" : "outline"}
               onClick={() => setPeriod("365")}
+              className="hover:scale-105 transition-transform"
             >
               1 Year
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {spendingData.length === 0 ? (
           <div className="h-64 bg-muted/10 rounded-lg flex items-center justify-center">
             <div className="text-center">
@@ -111,13 +122,17 @@ export default function SpendingChart() {
                   const height = maxAmount > 0 ? (day.amount / maxAmount) * 100 : 0;
                   
                   return (
-                    <div key={index} className="flex-1 flex flex-col items-center">
+                    <div key={index} className="flex-1 flex flex-col items-center group">
                       <div
-                        className="bg-primary rounded-t w-full transition-all duration-300 hover:bg-primary/80"
-                        style={{ height: `${height}%`, minHeight: day.amount > 0 ? '4px' : '0' }}
+                        className="bg-gradient-to-t from-primary to-primary/60 rounded-t w-full transition-all duration-500 hover:from-primary/80 hover:to-primary/40 cursor-pointer transform hover:scale-x-110 animate-slide-up"
+                        style={{ 
+                          height: `${height}%`, 
+                          minHeight: day.amount > 0 ? '6px' : '0',
+                          animationDelay: `${index * 0.05}s`
+                        }}
                         title={`${day.date}: $${day.amount.toFixed(2)}`}
                       />
-                      <span className="text-xs text-muted-foreground mt-1 truncate">
+                      <span className="text-xs text-muted-foreground mt-1 truncate group-hover:text-primary transition-colors">
                         {new Date(day.date).getDate()}
                       </span>
                     </div>

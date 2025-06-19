@@ -98,14 +98,19 @@ export default function ExpenseEntry() {
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="hover:shadow-lg transition-all duration-300">
+      <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-t-lg">
         <CardTitle className="flex items-center">
-          <PlusCircle className="h-5 w-5 text-primary mr-2" />
-          Quick Expense Entry
+          <div className="p-2 bg-white dark:bg-gray-800 rounded-full mr-3 shadow-sm">
+            <PlusCircle className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <span className="text-lg font-semibold">Quick Expense Entry</span>
+            <p className="text-sm text-muted-foreground font-normal">Track your spending instantly</p>
+          </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -197,10 +202,20 @@ export default function ExpenseEntry() {
 
             <Button 
               type="submit" 
-              className="w-full"
+              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               disabled={createExpenseMutation.isPending}
             >
-              {createExpenseMutation.isPending ? "Adding..." : "Add Expense"}
+              {createExpenseMutation.isPending ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Adding...</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <PlusCircle className="h-4 w-4" />
+                  <span>Add Expense</span>
+                </div>
+              )}
             </Button>
           </form>
         </Form>

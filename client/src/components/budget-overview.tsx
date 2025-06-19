@@ -97,11 +97,19 @@ export default function BudgetOverview() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Budget Overview</CardTitle>
+    <Card className="hover:shadow-lg transition-all duration-300">
+      <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-950/20 dark:to-teal-950/20 rounded-t-lg">
+        <CardTitle className="flex items-center">
+          <div className="p-2 bg-white dark:bg-gray-800 rounded-full mr-3 shadow-sm">
+            <i className="fas fa-bullseye text-green-600"></i>
+          </div>
+          <div>
+            <span className="text-lg font-semibold">Budget Overview</span>
+            <p className="text-sm text-muted-foreground font-normal">Track your spending limits</p>
+          </div>
+        </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {budgets?.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
@@ -117,20 +125,45 @@ export default function BudgetOverview() {
               const isOverBudget = percentage > 100;
               
               return (
-                <div key={budget.id} className="space-y-2">
+                <div key={budget.id} className="space-y-3 p-4 rounded-lg border border-muted hover:border-green-300 transition-all duration-300 hover:shadow-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-foreground">{budget.name}</span>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground font-mono">
                       {formatCurrency(budget.spent)} / {formatCurrency(budget.amount)}
                     </span>
                   </div>
-                  <Progress 
-                    value={Math.min(percentage, 100)} 
-                    className={`h-2 ${isOverBudget ? 'bg-destructive/20' : ''}`}
-                  />
-                  {isOverBudget && (
-                    <p className="text-xs text-destructive">Over budget by {formatCurrency(parseFloat(budget.spent) - parseFloat(budget.amount))}</p>
-                  )}
+                  <div className="relative">
+                    <Progress 
+                      value={Math.min(percentage, 100)} 
+                      className={`h-3 ${isOverBudget ? 'bg-red-100' : 'bg-green-50'}`}
+                    />
+                    <div className="absolute top-0 left-0 w-full h-3 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-1000 ${
+                          isOverBudget 
+                            ? 'bg-gradient-to-r from-red-500 to-red-600' 
+                            : percentage > 80 
+                              ? 'bg-gradient-to-r from-yellow-400 to-orange-500'
+                              : 'bg-gradient-to-r from-green-400 to-green-500'
+                        }`}
+                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className={`font-medium ${isOverBudget ? 'text-red-600' : percentage > 80 ? 'text-yellow-600' : 'text-green-600'}`}>
+                      {percentage}% used
+                    </span>
+                    {isOverBudget ? (
+                      <span className="text-red-600 font-medium">
+                        Over by {formatCurrency(parseFloat(budget.spent) - parseFloat(budget.amount))}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        {formatCurrency(parseFloat(budget.amount) - parseFloat(budget.spent))} remaining
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}

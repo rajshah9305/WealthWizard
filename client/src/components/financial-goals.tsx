@@ -117,11 +117,19 @@ export default function FinancialGoals() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Financial Goals</CardTitle>
+    <Card className="hover:shadow-lg transition-all duration-300">
+      <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-t-lg">
+        <CardTitle className="flex items-center">
+          <div className="p-2 bg-white dark:bg-gray-800 rounded-full mr-3 shadow-sm">
+            <i className="fas fa-trophy text-purple-600"></i>
+          </div>
+          <div>
+            <span className="text-lg font-semibold">Financial Goals</span>
+            <p className="text-sm text-muted-foreground font-normal">Achieve your dreams</p>
+          </div>
+        </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {goals?.length === 0 ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
@@ -137,31 +145,62 @@ export default function FinancialGoals() {
               const remaining = parseFloat(goal.targetAmount) - parseFloat(goal.currentAmount);
               
               return (
-                <div key={goal.id} className="border border-border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-foreground">{goal.name}</h4>
-                    <span className="text-sm text-muted-foreground">
+                <div key={goal.id} className={`border rounded-xl p-5 transition-all duration-300 hover:shadow-lg ${
+                  goal.isCompleted 
+                    ? 'border-yellow-300 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20' 
+                    : 'border-muted hover:border-purple-300'
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-semibold text-foreground">{goal.name}</h4>
+                      {goal.isCompleted && <span className="text-lg">🏆</span>}
+                    </div>
+                    <span className="text-sm text-muted-foreground font-mono">
                       {formatCurrency(goal.targetAmount)}
                     </span>
                   </div>
-                  <Progress value={percentage} className="h-2 mb-2" />
-                  <div className="flex justify-between text-sm text-muted-foreground mb-2">
-                    <span>{formatCurrency(goal.currentAmount)} saved</span>
-                    <span>{formatCurrency(remaining)} to go</span>
+                  <div className="relative mb-3">
+                    <Progress value={percentage} className="h-4 bg-purple-50 dark:bg-purple-950/20" />
+                    <div className="absolute top-0 left-0 w-full h-4 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-1000 ${
+                          goal.isCompleted 
+                            ? 'bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 animate-pulse-success' 
+                            : 'bg-gradient-to-r from-purple-400 to-pink-500'
+                        }`}
+                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                      />
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-xs font-medium text-white drop-shadow-sm">
+                        {percentage}%
+                      </span>
+                    </div>
                   </div>
-                  {!goal.isCompleted && (
+                  <div className="flex justify-between text-sm mb-4">
+                    <span className="text-muted-foreground">
+                      <span className="font-medium text-foreground">{formatCurrency(goal.currentAmount)}</span> saved
+                    </span>
+                    <span className="text-muted-foreground">
+                      <span className="font-medium text-foreground">{formatCurrency(remaining)}</span> to go
+                    </span>
+                  </div>
+                  {!goal.isCompleted ? (
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full"
+                      className="w-full hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all duration-200 transform hover:scale-[1.02]"
                       onClick={() => handleAddContribution(goal.id, goal.currentAmount)}
                     >
+                      <i className="fas fa-plus mr-2"></i>
                       Add Contribution
                     </Button>
-                  )}
-                  {goal.isCompleted && (
-                    <div className="text-center text-secondary text-sm font-medium">
-                      🎉 Goal Completed!
+                  ) : (
+                    <div className="text-center">
+                      <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full text-sm font-medium animate-bounce-in">
+                        <i className="fas fa-trophy mr-2"></i>
+                        Goal Completed!
+                      </div>
                     </div>
                   )}
                 </div>
